@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width" />
+    <title>Список замовлень</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body style="margin: 20px;">
+    <h2>Список замовлень</h2>
+    <form name="orderForm" class="col-md-6">
+        <input type="hidden" name="id" value="0" />
+        <div class="form-group">
+            <label for="productName">Назва замовлення:</label>
+            <input class="form-control" name="productName" />
+        </div>
+        <div class="form-group">
+            <label for="price">Вартість:</label>
+            <input class="form-control" name="price" />
+        </div>
+		<div class="form-group">
+            <label for="time">Дата та час замовлення:</label>
+            <input class="form-control" name="time" type="datetime-local"/>
+        </div>
+		<div class="form-group">
+            <label for="customerName">Ім'я замовника:</label>
+            <input class="form-control" name="customerName" />
+        </div>
+		<div class="form-group">
+            <label for="customerPhone">Телефон замовника:</label>
+            <input class="form-control" name="customerPhone" />
+        </div>
+        <div class="panel-body">
+            <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+            <a id="reset" class="btn btn-sm btn-primary">Сбросить</a>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped table-bordered">
+        <thead><tr>
+			<th>Id</th>
+			<th>Назва замовлення</th>
+			<th>Вартість</th>
+			<th>Час замовлення</th>
+			<th>Ім'я замовника</th>
+			<th>Телефон замовника</th>
+			<th></th>
+		</tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+   
+    <script>
+    // Получение всех пользователей
+        async function GetOrders() {
+            // отправляет запрос и получаем ответ
+            const response = await fetch("/api/orders", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            // если запрос прошел нормально
+            if (response.ok === true) {
+                // получаем данные
+                const orders = await response.json();
+                let rows = document.querySelector("tbody"); 
+                orders.forEach(order => {
+                    // добавляем полученные элементы в таблицу
+                    rows.append(row(order));
+                });
+            }
+        }
+        // Получение одного пользователя
+        async function GetOrder(id) {
+            const response = await fetch("/api/orders/" + id, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const order = await response.json();
+                const form = document.forms["orderForm"];
+                form.elements["id"].value = order._id;
+                form.elements["productName"].value = order.productName;
+				form.elements["price"].value = order.price;
+                form.elements["time"].value = order.time;
+                form.elements["customerName"].value = order.customerName;
+                form.elements["customerPhone"].value = order.customerPhone;
+            }
+        }
+        // Добавление пользователя
+        async function CreateOrder(orderProductName, orderPrice, orderTime, orderCustomerName, orderCustomerPhone) {
+  
+            const response = await fetch("api/orders", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+					productName: orderProductName,
+					price: orderPrice,
+					time: orderTime,
+					customerName: orderCustomerName,
+					customerPhone: orderCustomerPhone	
+				})
+            });
+            if (response.ok === true) {
+                const order = await response.json();
+                reset();
+                document.querySelector("tbody").append(row(order));
+            }
+        }
+        // Изменение пользователя
+        async function EditOrder(orderId, orderProductName, orderPrice, orderTime, orderCustomerName, orderCustomerPhone) {
+            const response = await fetch("api/orders", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+					id: orderId,
+					productName: orderProductName,
+					price: orderPrice,
+					time: orderTime,
+					customerName: orderCustomerName,
+					customerPhone: orderCustomerPhone	
+				})
+            });
+            if (response.ok === true) {
+                const order = await response.json();
+                reset();
+                document.querySelector("tr[data-rowid='" + order._id + "']").replaceWith(row(order));
+            }
+        }
+        // Удаление пользователя
+        async function DeleteOrder(id) {
+            const response = await fetch("/api/orders/" + id, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const order = await response.json();
+                document.querySelector("tr[data-rowid='" + order._id + "']").remove();
+            }
+        }
+  
+        // сброс формы
+        function reset() {
+            const form = document.forms["orderForm"];
+            form.reset();
+            form.elements["id"].value = 0;
+        }
+        // создание строки для таблицы
+        function row(order) {
+  
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", order._id);
+  
+            const idTd = document.createElement("td");
+            idTd.append(order._id);
+            tr.append(idTd);
+  
+            const productNameTd = document.createElement("td");
+            productNameTd.append(order.productName);
+            tr.append(productNameTd);
+  
+            const priceTd = document.createElement("td");
+            priceTd.append(order.price);
+            tr.append(priceTd);
+
+			const timeTd = document.createElement("td");
+            timeTd.append(order.time);
+            tr.append(timeTd);
+
+			const customerNameTd = document.createElement("td");
+            customerNameTd.append(order.customerName);
+            tr.append(customerNameTd);
+
+			const customerPhoneTd = document.createElement("td");
+            customerPhoneTd.append(order.customerPhone);
+            tr.append(customerPhoneTd);
+              
+            const linksTd = document.createElement("td");
+  
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", order._id);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Змінити");
+            editLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                GetOrder(order._id);
+            });
+            linksTd.append(editLink);
+  
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-id", order._id);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Видалити");
+            removeLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                DeleteOrder(order._id);
+            });
+  
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+  
+            return tr;
+        }
+        // сброс значений формы
+        document.getElementById("reset").click(function (e) {
+  
+            e.preventDefault();
+            reset();
+        })
+  
+        // отправка формы
+        document.forms["orderForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["orderForm"];
+            const id = form.elements["id"].value;
+            const productName = form.elements["productName"].value;
+            const price = form.elements["price"].value;
+			const time = form.elements["time"].value;
+			const customerName = form.elements["customerName"].value;
+			const customerPhone = form.elements["customerPhone"].value;
+            if (id == 0)
+                CreateOrder(productName, price, time, customerName, customerPhone);
+            else
+                EditOrder(id, productName, price, time, customerName, customerPhone);
+        });
+  
+        // загрузка пользователей
+        GetOrders();
+    </script>
+</body>
+</html>
